@@ -21,14 +21,11 @@ export function TextFieldController({
   ...restProps
 }) {
   const { control, watch } = useFormContext();
-  // console.log("name", name);
-  // console.log("auto_cancel_cod_after 2", watch(["auto_cancel_cod_after"]));
-  // console.log(name + "1", watch([name]));
 
   return (
     <Controller
       name={name}
-      defaultValue={defaultValue} // Add defaultValue prop
+      defaultValue={defaultValue}
       control={control}
       render={({ field, fieldState }) => {
         return (

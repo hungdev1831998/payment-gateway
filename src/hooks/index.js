@@ -1,1 +1,1 @@
-export * from './useDelay';
+export * from "./useDelay";

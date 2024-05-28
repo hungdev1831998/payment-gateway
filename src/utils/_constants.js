@@ -9,8 +9,9 @@ export const COLORS = {
   DARK_GREEN: "#049F58",
 
   BLACK: "#111010",
-  BLACK_2: "#231F20",
   BLACK_HOVER: "#333232",
+
+  BLACK_2: "#231F20",
 
   GREEN: "#119D49",
   GREEN_HOVER: "#0e873f",

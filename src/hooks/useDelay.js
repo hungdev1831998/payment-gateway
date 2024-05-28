@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from "react";
 
 /**
  *
@@ -8,7 +8,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 export const useDelay = ({ key = [], fn, options }) => {
   const [data, setData] = useState(undefined);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
   const queryData = useCallback(async () => {
     setLoading(true);
@@ -25,7 +25,7 @@ export const useDelay = ({ key = [], fn, options }) => {
        * handle error here
        */
       setLoading(false);
-      setError(error?.message || error || 'Error');
+      setError(error?.message || error || "Error");
     }
   }, key);
 
@@ -37,7 +37,7 @@ export const useDelay = ({ key = [], fn, options }) => {
        * handle error here
        */
       setLoading(false);
-      setError(error?.message || error || 'Error');
+      setError(error?.message || error || "Error");
     }
   }, []);
 

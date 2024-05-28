@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-
 import { useToast, Button } from "@chakra-ui/react";
 
 function ButtonToast(props) {

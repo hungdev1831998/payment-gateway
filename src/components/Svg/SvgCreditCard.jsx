@@ -1,4 +1,4 @@
-export function SvgCreditCard() { 
+export function SvgCreditCard() {
   return (
     <svg
       width="24px"

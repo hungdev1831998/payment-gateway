@@ -1,5 +1,4 @@
 import React from "react";
-import { useNavigate } from "react-router-dom";
 import {
   Box,
   Flex,
@@ -9,8 +8,6 @@ import {
 } from "@chakra-ui/react";
 
 const Footer = React.forwardRef((props, ref) => {
-  const navigate = useNavigate();
-
   return (
     <Box
       bg={useColorModeValue("gray.200", "gray.900")}
