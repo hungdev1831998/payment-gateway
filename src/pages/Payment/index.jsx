@@ -38,13 +38,24 @@ import Header from "../../components/Header";
 import Footer from "../../components/Footer";
 
 const Payment = React.forwardRef((props, ref) => {
+  const url = new URL(window.location.href);
+  let params_current_step = url.searchParams.get("step");
+  let params_result = url.searchParams.get("result");
+  let params_paymentId = url.searchParams.get('paymentId')
+  let params_token = url.searchParams.get('token')
+  let params_PayerID = url.searchParams.get('PayerID')
+
   const [loading, setLoading] = useState(false);
   const [toastMessage, setToastMessage] = useState(undefined);
-  const [accessToken, setAccessToken] = useState(null);
+  const [accessToken, setAccessToken] = useState('');
   const { activeStep, setActiveStep } = useSteps({
     index: 1,
     count: ENTRY_CODE_STEPS.length,
   });
+  const [paypalLink, setPaypalLink] = useState(null)
+  const [paymentStatus, setPaymentStatus] = useState('init')
+  const [paymentResult, setPaymentResult] = useState(false)
+  const [loadingPayment, setLoadingPayment] = useState(false)
 
   const methods = useForm({
     mode: "onChange",
@@ -81,11 +92,10 @@ const Payment = React.forwardRef((props, ref) => {
   };
 
   const paymentGateway = useMutation({
-    mutationKey: ["paymentGateway"],
-    mutationFn: async ({ payload }) => {
+    mutationFn: async ({data}) => {
       return await axios.post(
-        `${process.env.REACT_APP_DOMAIN_SITE_URL}/api/.../`,
-        payload,
+        `${process.env.REACT_APP_DOMAIN_SITE_URL}generic-payment/paypal/`,
+        data,
         {
           headers: {
             Authorization: `Bearer ${accessToken}`,
@@ -95,16 +105,67 @@ const Payment = React.forwardRef((props, ref) => {
     },
   });
 
+  const paymentCallBack = useMutation({
+    mutationFn: async ({token, PayerID, paymentId}) => {
+      return await axios.get(
+        `${process.env.REACT_APP_DOMAIN_SITE_URL}generic-payment/paypal/execute-payment?token=${token}&PayerID=${PayerID}&paymentId=${paymentId}`,
+      );
+    }
+  })
+
+
+  useEffect(()=> {
+    if(params_paymentId && params_token && params_PayerID && loadingPayment === false) {
+      console.log(111111333333)
+      setLoadingPayment(true)
+      paymentCallBack.mutateAsync(
+        {
+          paymentId: params_paymentId,
+          PayerID: params_PayerID,
+          token: params_token
+        }
+      )
+      .then((result) => {
+        console.log(11111111, result)
+        setPaymentStatus(true)
+        setPaymentStatus('finish')
+        setPaypalLink(null)
+        setLoading(false);
+        reset();
+      })
+      .catch((error) => {
+        setPaymentStatus(false)
+        console.log(1111122222, error)
+        setLoading(false);
+      });
+      setLoadingPayment(false)
+
+    }
+  }, [params_token, params_PayerID, params_paymentId])
+
+  useEffect(()=> {
+    if (params_current_step) {
+      setActiveStep(parseInt(params_current_step))
+    } 
+
+  }, [params_result, params_current_step])
+
+  useEffect(()=>{
+    if (paymentStatus === 'in-processing' && paypalLink) {
+      window.location.href = paypalLink
+    }
+  }, [paymentStatus, paypalLink])
+
   const onSubmit = async () => {
     setLoading(true);
 
-    if (activeStep === 2) {
-      setTimeout(() => {
-        setActiveStep(activeStep + 1);
-        setLoading(false);
-      }, 1500);
-      return;
-    }
+    // if (activeStep === 2) {
+    //   setTimeout(() => {
+    //     setActiveStep(activeStep + 1);
+    //     setLoading(false);
+    //   }, 1500);
+    //   return;
+    // }
 
     const validate = checkValidate();
     if (!validate) return;
@@ -114,24 +175,53 @@ const Payment = React.forwardRef((props, ref) => {
     };
 
     console.log("payload", payload);
-    setTimeout(() => {
-      setActiveStep(activeStep + 1);
-      setLoading(false);
-    }, 1500);
-
-    // await paymentGateway
-    //   .mutateAsync({
-    //     payload,
-    //   })
-    //   .then(() => {
-    //     setActiveStep(activeStep + 1);
-    //     setLoading(false);
-    //     reset();
-    //   })
-    //   .catch((error) => {
-    //     setLoading(false);
-    //     setActiveStep(activeStep + 1);
-    //   });
+    
+    if (activeStep === 2) {
+      const money = payload?.money ? payload?.money: 0
+      //Prepair data
+      const data = {
+        "transactions": [
+            {
+                "item_list": {
+                    "items": [
+                        {
+                            "name": "item 1",
+                            "sku": "item 1",
+                            "price": money,
+                            "currency": "USD",
+                            "quantity": 1
+                        }
+                    ]
+                },
+                "amount": {
+                    "total": money,
+                    "currency": "USD"
+                },
+                "description": "This is the payment transaction description."
+            }
+        ]
+      }
+      await paymentGateway
+        .mutateAsync({
+          data,
+        })
+        .then((result) => {
+          setPaymentStatus('in-processing')
+          setPaypalLink(result?.data?.data?.result)
+          // setActiveStep(activeStep + 1);
+          setLoading(false);
+          reset();
+        })
+        .catch((error) => {
+          setLoading(false);
+          setActiveStep(activeStep + 1);
+        });
+    } else {
+      setTimeout(() => {
+        setActiveStep(activeStep + 1);
+        setLoading(false);
+      }, 1500);
+    }
   };
 
   const renderContent = () => {
@@ -168,11 +258,11 @@ const Payment = React.forwardRef((props, ref) => {
         {activeStep === 1 && (
           <Box>
             <Text fontSize="2xl" fontWeight="bold" mt={6} textAlign="center">
-              Payment Gateway
+              Cổng Thanh Toán
             </Text>
 
             <FormControl mt={10}>
-              <FormLabel>Money</FormLabel>
+              <FormLabel>Nhập số tiền cần thanh toán ($)</FormLabel>
               <Controller
                 name={"money"}
                 control={control}
@@ -206,7 +296,7 @@ const Payment = React.forwardRef((props, ref) => {
         {activeStep === 2 && (
           <Box>
             <Text fontSize="2xl" fontWeight="bold" mt={6} textAlign="center">
-              Payment Gateway
+              Cổng Thanh Toán
             </Text>
             <Box
               margin="0 auto"
@@ -224,7 +314,7 @@ const Payment = React.forwardRef((props, ref) => {
                 logo={SvgPaypal}
                 text=""
               />
-              <CustomButton
+              {/* <CustomButton
                 bgColor="blue.500"
                 color="white"
                 logo={SvgVenmo}
@@ -241,7 +331,7 @@ const Payment = React.forwardRef((props, ref) => {
                 color="white"
                 logo={SvgCreditCard}
                 text="Debit or Credit Card"
-              />
+              /> */}
             </Box>
           </Box>
         )}
@@ -254,7 +344,7 @@ const Payment = React.forwardRef((props, ref) => {
             textAlign="center"
             // p={4}
           >
-            {paymentGateway?.isSuccess ? (
+            {paymentResult === true ? (
               <>
                 <CheckCircleIcon w={20} h={20} color="green.500" />
                 <Text fontSize="2xl" fontWeight="bold" mt={4}>
@@ -280,7 +370,7 @@ const Payment = React.forwardRef((props, ref) => {
   };
 
   const buttonText = () => {
-    return activeStep === 1 ? "Xác nhận" : "Hoàn thành";
+    return "Xác nhận";
   };
 
   return (
@@ -294,7 +384,7 @@ const Payment = React.forwardRef((props, ref) => {
           fontSize={{ base: "xl", md: "2xl" }}
           fontWeight={{ base: 600, md: 600 }}
         >
-          OnePAY
+          Demo Payment Gateway
         </Text>
         <FormProvider>
           <form onSubmit={handleSubmit(onSubmit)}>

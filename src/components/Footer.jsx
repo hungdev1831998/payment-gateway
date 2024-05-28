@@ -24,7 +24,7 @@ const Footer = React.forwardRef((props, ref) => {
               gridRowGap={"9px"}
             >
               <Heading fontSize={{ base: "2xl", md: "2xl" }}>
-                Payment Gateway
+                Cổng Thanh Toán
               </Heading>
               <Box
                 display={{ base: "block", md: "flex" }}
